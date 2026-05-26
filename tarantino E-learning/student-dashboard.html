@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Dashboard</title>
+  <style>
+    :root {
+      --primary: #007bff;
+      --secondary: #28a745;
+      --accent: #ffc107;
+      --danger: #dc3545;
+      --shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+    }
+
+    h2 { margin-bottom: 5px; }
+    #studentName { font-size: 16px; color: #555; margin-bottom: 20px; }
+
+    /* ---------- NAV BUTTONS ---------- */
+    nav {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    nav button {
+      flex: 1 1 150px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 12px 15px;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s ease;
+      box-shadow: var(--shadow);
+    }
+
+    nav button:hover {
+      background: #0056b3;
+      transform: translateY(-2px);
+    }
+
+    nav button.active {
+      background: var(--secondary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      nav button {
+        flex: 1 1 45%;
+        font-size: 0.9rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      nav {
+        flex-direction: column;
+      }
+      nav button {
+        width: 100%;
+        font-size: 0.9rem;
+      }
+    }
+
+    /* ---------- SECTIONS ---------- */
+    section { display: none; }
+    section.active { display: block; }
+
+    input[type="text"], select {
+      padding: 8px;
+      margin: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    #quizList, #notesList {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .quiz-card, .note-card {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      width: 320px;
+      transition: 0.3s;
+      opacity: 0;
+      animation: fadeIn 0.5s forwards;
+    }
+
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    h3 { color: var(--primary); margin-bottom: 5px; }
+    p { margin: 5px 0; }
+
+    button.quiz-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+
+    button.quiz-btn:hover { background: #0056b3; }
+
+    .active-quiz { background: #e8f5e9; border-left: 5px solid var(--secondary); }
+    .upcoming { background: #fff5cc; border-left: 5px solid var(--accent); }
+    .expired { background: #ffe6e6; border-left: 5px solid var(--danger); }
+
+    iframe {
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+
+    #logoutBtn {
+      margin-top: 30px;
+      background: var(--danger);
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #logoutBtn:hover { background: #b02a37; }
+  </style>
+</head>
+<body>
+  <h2>Welcome Student</h2>
+  <div id="studentName"></div>
+
+  <!-- NAV BUTTONS -->
+  <nav>
+    <button class="nav-btn active" data-target="quizzesSection">🧩 Quizzes</button>
+    <button class="nav-btn" data-target="notesSection">📚 Notes & Tutorials</button>
+  </nav>
+
+  <!-- QUIZZES SECTION -->
+  <section id="quizzesSection" class="active">
+    <h3>🧩 Available Quizzes</h3>
+    <input type="text" id="searchInput" placeholder="Search quizzes by title...">
+    <select id="statusFilter">
+      <option value="current">Current & Upcoming</option>
+      <option value="expired">Expired Only</option>
+      <option value="all">All Quizzes</option>
+    </select>
+    <div id="quizList"></div>
+  </section>
+
+  <!-- NOTES SECTION -->
+  <section id="notesSection">
+    <h3>📚 Notes & Tutorials</h3>
+    <input type="text" id="searchNotes" placeholder="Search notes by title...">
+    <div id="notesList"></div>
+  </section>
+
+  <button id="logoutBtn">Logout</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, orderBy }
+      from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+    import { getAuth, signOut, onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2g8x-tvOkFI0mi0gTzU2vFLo4aj8wB0s",
+      authDomain: "noble-register.firebaseapp.com",
+      projectId: "noble-register",
+      storageBucket: "noble-register.appspot.com",
+      messagingSenderId: "280367520296",
+      appId: "1:280367520296:web:29b32c0f9669bdfae6731d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const quizList = document.getElementById("quizList");
+    const notesList = document.getElementById("notesList");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const filterSelect = document.getElementById("statusFilter");
+    const searchInput = document.getElementById("searchInput");
+    const searchNotes = document.getElementById("searchNotes");
+    const studentNameDiv = document.getElementById("studentName");
+
+    let allQuizzes = [];
+    let allNotes = [];
+
+    // Auth Check
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "student-login.html";
+      } else {
+        studentNameDiv.textContent = `Logged in as: ${user.displayName || user.email}`;
+        loadQuizzes();
+        loadNotes();
+        setInterval(loadQuizzes, 30000);
+      }
+    });
+
+    // Load Quizzes
+    async function loadQuizzes() {
+      const snapshot = await getDocs(collection(db, "teacher_quizzes"));
+      const now = new Date();
+
+      allQuizzes = snapshot.docs.map((doc) => {
+        const q = doc.data();
+        const start = new Date(q.startTime);
+        const end = new Date(q.endTime);
+        const status = now < start ? "upcoming" : now > end ? "expired" : "active-quiz";
+        return { ...q, start, end, status };
+      });
+
+      renderQuizzes();
+    }
+
+    function renderQuizzes() {
+      quizList.innerHTML = "";
+      const filter = filterSelect.value;
+      const searchTerm = searchInput.value.toLowerCase();
+
+      const filtered = allQuizzes.filter(q => {
+        const matchesFilter =
+          filter === "current" ? q.status === "active-quiz" || q.status === "upcoming"
+          : filter === "expired" ? q.status === "expired"
+          : true;
+        const matchesSearch = q.title.toLowerCase().includes(searchTerm);
+        return matchesFilter && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        quizList.innerHTML = "<p>No quizzes found.</p>";
+        return;
+      }
+
+      filtered.forEach(q => {
+        const div = document.createElement("div");
+        div.classList.add("quiz-card", q.status);
+        const statusText =
+          q.status === "active-quiz" ? "🟢 Open now"
+          : q.status === "upcoming" ? "🕒 Not yet open"
+          : "🔴 Closed";
+
+        const buttonLabel =
+          q.status === "expired" ? "View Corrections"
+          : q.status === "upcoming" ? "Wait to Open"
+          : "Open Quiz";
+
+        div.innerHTML = `
+          <h3>${q.title}</h3>
+          ${q.description ? `<p>${q.description}</p>` : ""}
+          <p><strong>Teacher:</strong> ${q.teacher}</p>
+          <p><strong>Open:</strong> ${q.start.toLocaleString()}</p>
+          <p><strong>End:</strong> ${q.end.toLocaleString()}</p>
+          <p><strong>Status:</strong> ${statusText}</p>
+          <button class="quiz-btn">${buttonLabel}</button>
+        `;
+
+        div.querySelector(".quiz-btn").addEventListener("click", () => {
+          if (q.status === "upcoming") {
+            alert("🕒 This quiz is not open yet.");
+          } else {
+            window.open(q.link, "_blank");
+          }
+        });
+
+        quizList.appendChild(div);
+      });
+    }
+
+    filterSelect.addEventListener("change", renderQuizzes);
+    searchInput.addEventListener("input", renderQuizzes);
+
+    // Load Notes
+    async function loadNotes() {
+      const snapshot = await getDocs(query(collection(db, "teacher_notes"), orderBy("timestamp", "desc")));
+      allNotes = snapshot.docs.map(doc => doc.data());
+      renderNotes();
+    }
+
+    function renderNotes() {
+      notesList.innerHTML = "";
+      const searchTerm = searchNotes.value.toLowerCase();
+      const filtered = allNotes.filter(n => n.title.toLowerCase().includes(searchTerm));
+
+      if (filtered.length === 0) {
+        notesList.innerHTML = "<p>No notes or tutorials found.</p>";
+        return;
+      }
+
+      filtered.forEach(n => {
+        const div = document.createElement("div");
+        div.classList.add("note-card");
+        div.innerHTML = `
+          <h3>${n.title}</h3>
+          <p><strong>Class:</strong> ${n.class}</p>
+          ${n.description ? `<p>${n.description}</p>` : ""}
+          ${n.pdfUrl ? `<p><a href="${n.pdfUrl}" target="_blank">📄 View PDF Notes</a></p>` : ""}
+          ${n.youtubeLink ? `<iframe width="280" height="160" src="${n.youtubeLink.replace("watch?v=", "embed/")}" frameborder="0" allowfullscreen></iframe>` : ""}
+          <p><strong>Teacher:</strong> ${n.teacher}</p>
+        `;
+        notesList.appendChild(div);
+      });
+    }
+
+    searchNotes.addEventListener("input", renderNotes);
+
+    // Navigation toggle
+    const navButtons = document.querySelectorAll(".nav-btn");
+    const sections = document.querySelectorAll("section");
+
+    navButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        navButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const target = btn.dataset.target;
+        sections.forEach(s => s.classList.remove("active"));
+        document.getElementById(target).classList.add("active");
+      });
+    });
+
+    // Logout
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.href = "student-login.html";
+    });
+  </script>
+</body>
+</html>
