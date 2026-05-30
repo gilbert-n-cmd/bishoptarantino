@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Dashboard</title>
+<style>
+:root {
+  --primary: #4a90e2;
+  --danger: #dc3545;
+  --light: #f5f6fa;
+  --white: #fff;
+  --shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+* { box-sizing: border-box; }
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: var(--light);
+  margin: 0;
+}
+header {
+  background: var(--primary);
+  color: var(--white);
+  padding: 15px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  box-shadow: var(--shadow);
+}
+header h1 { margin: 0; font-size: 1.4rem; }
+#logoutBtn {
+  position: absolute; right: 20px;
+  background: var(--danger); border: none;
+  color: var(--white); padding: 7px 14px;
+  border-radius: 6px; cursor: pointer;
+  font-weight: bold; transition: 0.2s;
+}
+#logoutBtn:hover { opacity: 0.9; }
+nav {
+  background:#1976d2;
+  padding:10px;
+  display:flex;
+  justify-content:center;
+  flex-wrap: wrap;
+  gap:10px;
+}
+nav button {
+  padding:10px 16px; border:none; border-radius:6px;
+  color:white; background:#2196f3; cursor:pointer; transition:0.2s;
+  font-size: 0.95rem;
+}
+nav button:hover { background:#1565c0; }
+main { max-width: 1100px; margin: 20px auto; padding: 15px; }
+section {
+  background: var(--white); padding: 15px; border-radius: 10px;
+  box-shadow: var(--shadow); margin-bottom: 20px;
+}
+h3 {
+  border-left: 5px solid var(--primary);
+  padding-left: 10px; margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+.summary-cards {
+  display: flex; flex-wrap: wrap;
+  justify-content: space-around; gap: 10px;
+}
+.summary-card {
+  flex: 1 1 120px; background: #e3f2fd;
+  border-radius: 8px; text-align: center;
+  padding: 10px; box-shadow: var(--shadow);
+  transition: 0.2s;
+}
+.summary-card:hover { transform: translateY(-2px); }
+.summary-card h2 { margin: 0; font-size: 1.4rem; color: #1976d2; }
+.summary-card p { margin: 5px 0 0; color: #555; font-size: 0.85rem; }
+#loadingMsg { text-align:center; color:gray; margin:15px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Admin Dashboard</h1>
+  <button id="logoutBtn">Logout</button>
+</header>
+
+<nav>
+  <button class="menu-btn" data-section="dashboardSummary">Dashboard</button>
+  <button class="menu-btn" data-section="addUserSection">Add New User</button>
+  <button class="menu-btn" data-section="teachersSection">Teachers</button>
+  <button class="menu-btn" data-section="studentsSection">Students</button>
+  <button class="menu-btn" data-section="quizzesSection">Quizzes</button>
+  <button class="menu-btn" data-section="notesSection">Notes & Tutorials</button>
+</nav>
+
+<p id="loadingMsg">Loading data, please wait...</p>
+
+<main>
+  <section id="dashboardSummary">
+    <h3>📊 Dashboard Summary</h3>
+    <div class="summary-cards">
+      <div class="summary-card"><h2 id="totalUsers">0</h2><p>Total Users</p></div>
+      <div class="summary-card"><h2 id="totalTeachers">0</h2><p>Teachers</p></div>
+      <div class="summary-card"><h2 id="totalStudents">0</h2><p>Students</p></div>
+      <div class="summary-card"><h2 id="totalQuizzes">0</h2><p>Quizzes</p></div>
+      <div class="summary-card"><h2 id="totalNotes">0</h2><p>Notes & Tutorials</p></div>
+    </div>
+  </section>
+
+  <section id="addUserSection" style="display:none;">
+    <h3>➕ Add New User</h3>
+    <form id="createUserForm">
+      <input type="email" id="newEmail" placeholder="User Email" required>
+      <input type="password" id="newPassword" placeholder="Password" required>
+      <select id="newRole" required>
+        <option value="">Select Role</option>
+        <option value="teacher">Teacher</option>
+        <option value="student">Student</option>
+      </select>
+      <button type="submit">Create User</button>
+      <p id="createMsg"></p>
+    </form>
+  </section>
+
+  <section id="teachersSection" style="display:none;">
+    <h3>👩‍🏫 Teachers</h3>
+    <table id="teachersTable">
+      <thead>
+        <tr><th>Email</th><th>Password</th><th>Action</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="studentsSection" style="display:none;">
+    <h3>👨‍🎓 Students</h3>
+    <table id="studentsTable">
+      <thead>
+        <tr><th>Email</th><th>Password</th><th>Action</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="quizzesSection" style="display:none;">
+    <h3>🧩 Quizzes</h3>
+    <table id="quizTable">
+      <thead><tr><th>Title</th><th>Teacher</th><th>Start</th><th>End</th><th>Action</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="notesSection" style="display:none;">
+    <h3>📚 Notes & Tutorials</h3>
+    <table id="notesTable">
+      <thead><tr><th>Title</th><th>Teacher</th><th>PDF</th><th>YouTube</th><th>Action</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDv0wNHZl4wSXd10B7tr9Br-7phWidLDaU",
+  authDomain: "tarantino-e-learning.firebaseapp.com",
+  projectId: "tarantino-e-learning",
+  storageBucket: "tarantino-e-learning.firebasestorage.app",
+  messagingSenderId: "501202693775",
+  appId: "1:501202693775:web:fabc3af9989542c9a18afa",
+  databaseURL: "https://tarantino-e-learning-default-rtdb.firebaseio.com"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const loadingMsg = document.getElementById("loadingMsg");
+const totalUsersEl = document.getElementById("totalUsers");
+const totalTeachersEl = document.getElementById("totalTeachers");
+const totalStudentsEl = document.getElementById("totalStudents");
+const totalQuizzesEl = document.getElementById("totalQuizzes");
+const totalNotesEl = document.getElementById("totalNotes");
+
+const menuButtons = document.querySelectorAll(".menu-btn");
+const sections = document.querySelectorAll("main section");
+menuButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    menuButtons.forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    sections.forEach((s) => (s.style.display = "none"));
+    const target = document.getElementById(btn.dataset.section);
+    if (target) target.style.display = "block";
+  });
+});
+
+let didLoad = false;
+
+onAuthStateChanged(auth, async (user) => {
+  // avoid redirect during initial auth handshake blink
+  if (!user) {
+    loadingMsg.textContent = "Not logged in";
+    return;
+  }
+  if (didLoad) return;
+  didLoad = true;
+
+  try {
+    const [studentsSnap, quizzesSnap, notesSnap] = await Promise.all([
+      getDocs(collection(db, "students")),
+      getDocs(collection(db, "teacher_quizzes")),
+      getDocs(collection(db, "notes"))
+    ]);
+
+    totalUsersEl.textContent = String(studentsSnap.size);
+    totalTeachersEl.textContent = "-";
+    totalStudentsEl.textContent = String(studentsSnap.size);
+    totalQuizzesEl.textContent = String(quizzesSnap.size);
+    totalNotesEl.textContent = String(notesSnap.size);
+
+    loadingMsg.style.display = "none";
+
+    // show default section
+    const dashboard = document.getElementById("dashboardSummary");
+    if (dashboard) dashboard.style.display = "block";
+  } catch (e) {
+    console.error(e);
+    loadingMsg.textContent = "Failed to load dashboard data";
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await signOut(auth);
+  window.location.href = "admin-login.html";
+});
+</script>
+
+</body>
+</html>
