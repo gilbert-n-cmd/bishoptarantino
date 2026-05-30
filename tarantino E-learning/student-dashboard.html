@@ -180,21 +180,30 @@
   <button id="logoutBtn">Logout</button>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, query, orderBy }
-      from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
-    import { getAuth, signOut, onAuthStateChanged }
-      from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 
-    // Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyD2g8x-tvOkFI0mi0gTzU2vFLo4aj8wB0s",
-      authDomain: "noble-register.firebaseapp.com",
-      projectId: "noble-register",
-      storageBucket: "noble-register.appspot.com",
-      messagingSenderId: "280367520296",
-      appId: "1:280367520296:web:29b32c0f9669bdfae6731d"
-    };
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+import {
+  getAuth,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDv0wNHZl4wSXd10B7tr9Br-7phWidLDaU",
+  authDomain: "tarantino-e-learning.firebaseapp.com",
+  projectId: "tarantino-e-learning",
+  storageBucket: "tarantino-e-learning.firebasestorage.app",
+  messagingSenderId: "501202693775",
+  appId: "1:501202693775:web:fabc3af9989542c9a18afa"
+};
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
