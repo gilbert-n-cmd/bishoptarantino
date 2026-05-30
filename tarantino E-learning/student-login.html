@@ -50,11 +50,25 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } 
-      from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 
-    const API_BASE = './api/';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDv0wNHZl4wSXd10B7tr9Br-7phWidLDaU",
+  authDomain: "tarantino-e-learning.firebaseapp.com",
+  projectId: "tarantino-e-learning",
+  storageBucket: "tarantino-e-learning.firebasestorage.app",
+  messagingSenderId: "501202693775",
+  appId: "1:501202693775:web:fabc3af9989542c9a18afa"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
     const loginBtn = document.getElementById("loginBtn");
     const signupLink = document.getElementById("signupLink");
@@ -62,26 +76,12 @@
     loginBtn.addEventListener("click", async () => {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
-      
       try {
-        const response = await fetch(`${API_BASE}auth.php?action=login`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-          body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-          localStorage.setItem('userRole', data.role);
-          localStorage.setItem('userName', data.name);
-          localStorage.setItem('userId', data.user_id || ''); // Fallback
-          alert("Login successful!");
-          window.location.href = "student-dashboard.html";
-        } else {
-          alert(data.error || 'Login failed');
-        }
+        await signInWithEmailAndPassword(auth, email, password);
+        alert("Login successful!");
+        window.location.href = "student-dashboard.html";
       } catch (error) {
-        alert('Network error: ' + error.message);
+        alert(error.message);
       }
     });
 
@@ -89,22 +89,14 @@
       e.preventDefault();
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
-      const name = prompt("Enter your name:", email.split('@')[0]);
-      if (!name) return;
-      
       if (!email || !password) return alert("Enter email and password first.");
-      
       try {
-        const response = await fetch(`${API_BASE}auth.php?action=register`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-          body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&role=student&name=${encodeURIComponent(name)}`
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-          alert("Account created! You can log in now.");
-        } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+        alert("Account created! You can log in now.");
+      } catch (error) {
+        alert(error.message);
+      }
+    });
   </script>
 </body>
 </html>
